@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 env:
-  APP_NAME: "Salve-Video"
+  APP_NAME: Salve-Video
 
 jobs:
   build:
@@ -24,13 +24,34 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.7"
+          gradle-version: 8.7
 
       - name: Preparar proyecto
         run: |
           if [ ! -d app ]; then
             unzip -q SalveTools.zip -d _tmp
-            APPDIR=$(dirname "$(find _tmp -type f -path '*/app/build.gradle.kts' | head -n1)")
-            cp -r "$APPDIR" ./app
+            cp -r _tmp/*/app ./app
           fi
-          sed -i "s|<string name=\"app_name\">.*</string>|<string name=\"app_name\">${APP_NAME}
+          sed -i "s|>SaveTools<|>${APP_NAME}<|" app/src/main/res/values/strings.xml
+
+      - name: Compilar
+        run: gradle assembleDebug --no-daemon
+
+      - name: Nombrar APK
+        id: apk
+        run: |
+          VERSION=$(grep versionName app/build.gradle.kts | head -1 | tr -dc '0-9.')
+          mkdir -p dist
+          cp app/build/outputs/apk/debug/app-debug.apk dist/${APP_NAME}-v${VERSION}.apk
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-apk
+          path: dist/*.apk
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.apk.outputs.version }}
+          name: ${{ env.APP_NAME }} v${{ steps.apk.outputs.version }}
+          files: dist/*.apk
