@@ -1,8 +1,12 @@
 name: Compilación APK
+
 on:
   workflow_dispatch:
   push:
     branches: [main]
+
+permissions:
+  contents: write
 
 env:
   APP_NAME: "Salve-Video"
@@ -29,12 +33,4 @@ jobs:
             APPDIR=$(dirname "$(find _tmp -type f -path '*/app/build.gradle.kts' | head -n1)")
             cp -r "$APPDIR" ./app
           fi
-          sed -i "s|<string name=\"app_name\">.*</string>|<string name=\"app_name\">${APP_NAME}</string>|" app/src/main/res/values/strings.xml
-
-      - name: Compilar
-        run: gradle assembleDebug --no-daemon
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.APP_NAME }}-apk
-          path: app/build/outputs/apk/debug/*.apk
+          sed -i "s|<string name=\"app_name\">.*</string>|<string name=\"app_name\">${APP_NAME}
